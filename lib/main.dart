@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:mongodb/database_services.dart';
 
+import 'package:mongodb/login_screen.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
@@ -8,6 +10,23 @@ void main() async {
     runApp(MyApp());
   } catch (e) {
     print("Error connecting to MongoDB: $e");
+    runApp(ErrorApp(error: e.toString()));
+  }
+}
+
+class ErrorApp extends StatelessWidget {
+  final String error;
+  ErrorApp({required this.error});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: Text("Error connecting to MongoDB: $error", style: TextStyle(color: Colors.red)),
+        ),
+      ),
+    );
   }
 }
 
@@ -15,66 +34,16 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      title: 'MongoDB Auth Demo',
       theme: ThemeData(
+        primarySwatch: Colors.blue,
         scaffoldBackgroundColor: Colors.white,
         textTheme: TextTheme(
           bodyLarge: TextStyle(color: Colors.black), 
           bodyMedium: TextStyle(color: Colors.black), 
         ),
       ),
-      home: MongoDBTest(),
+      home: LoginScreen(),
     );
   }
 }
-
-class MongoDBTest extends StatefulWidget {
-  @override
-  _MongoDBExampleState createState() => _MongoDBExampleState();
-}
-
-class _MongoDBExampleState extends State<MongoDBTest> {
-  List<Map<String, dynamic>> users = [];
-
-  @override
-  void initState() {
-    super.initState();
-    loadUsers();
-  }
-
-  Future<void> loadUsers() async {
-    var data = await DatabaseService.fetchUsers();
-    setState(() {
-      users = data;
-    });
-  }
-
-  Future<void> addUser() async {
-    await DatabaseService.insertUser({"name": "Alice", "age": 27});
-    loadUsers(); // Reload data after inserting
-  }
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text("MongoDB Data",style: TextStyle(fontWeight: FontWeight.bold,color: Colors.white,fontSize: 20),),backgroundColor: Colors.black,),
-      body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: DatabaseService.fetchUsers(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text("Error: ${snapshot.error}"));
-          } else {
-            return ListView(
-              children: snapshot.data!.map((user) => ListTile(
-                title: Text(user["name"]),
-                subtitle: Text("Age: ${user["age"]}"),
-              )).toList(),
-            );
-          }
-        },
-      ),
-    );
-  }
-}
-
-
